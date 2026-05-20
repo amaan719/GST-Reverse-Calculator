@@ -365,21 +365,30 @@ export default function GSTCalculator() {
   const [selectedRate, setSelectedRate] = useState(18);
   const [useCustom, setUseCustom] = useState(false);
   const [customRate, setCustomRate] = useState("");
+  const [mode, setMode] = useState("reverse");
   const [result, setResult] = useState(null);
 
   const activeRate = useCustom ? parseFloat(customRate) || 0 : selectedRate;
+  const isReverseMode = mode === "reverse";
 
   // Live calculation
   useEffect(() => {
     const a = parseFloat(amount);
     if (!isNaN(a) && a > 0 && activeRate > 0) {
-      const withoutGST = a / (1 + activeRate / 100);
-      const gstAmt = a - withoutGST;
-      setResult({ withGST: a, gstAmt, withoutGST, rate: activeRate });
+      if (isReverseMode) {
+        const withoutGST = a / (1 + activeRate / 100);
+        const gstAmt = a - withoutGST;
+        setResult({ withGST: a, gstAmt, withoutGST, rate: activeRate });
+      } else {
+        const withoutGST = a;
+        const gstAmt = a * (activeRate / 100);
+        const withGST = a + gstAmt;
+        setResult({ withGST, gstAmt, withoutGST, rate: activeRate });
+      }
     } else {
       setResult(null);
     }
-  }, [amount, activeRate]);
+  }, [amount, activeRate, isReverseMode]);
 
   const handleReset = () => {
     setAmount("");
@@ -397,17 +406,36 @@ export default function GSTCalculator() {
           <div className="gst-header">
             <div className="gst-badge">🇮🇳 India GST</div>
             <h1 className="gst-title">
-              GST <span>Reverse</span>
-              <br />Calculator
+              GST <span>Calculator</span>
+              <br />Mode Selector
             </h1>
-            <p className="gst-subtitle">GST Amount se पहले का Price जानें</p>
+            <p className="gst-subtitle">GST Amount से Price निकालें या Price में GST जोड़ें</p>
           </div>
 
           {/* Card */}
           <div className="gst-card">
 
+            {/* Mode Selector */}
+            <label className="gst-label">Mode चुनें</label>
+            <div className="gst-rates-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+              <button
+                className={`rate-btn${isReverseMode ? " rate-active" : ""}`}
+                onClick={() => setMode("reverse")}
+              >
+                Reverse
+              </button>
+              <button
+                className={`rate-btn${!isReverseMode ? " rate-active" : ""}`}
+                onClick={() => setMode("forward")}
+              >
+                Forward
+              </button>
+            </div>
+
             {/* Amount Input */}
-            <label className="gst-label">GST के साथ Amount (₹)</label>
+            <label className="gst-label">
+              {isReverseMode ? "GST के साथ Amount (₹)" : "Base Price बिना GST (₹)"}
+            </label>
             <div className="gst-input-wrap">
               <span className="gst-prefix">₹</span>
               <input
@@ -467,8 +495,12 @@ export default function GSTCalculator() {
             {/* Result */}
             <div className={`result-box${result ? " result-visible" : ""}`}>
               <div className="res-row">
-                <span className="res-lbl">GST के साथ Amount</span>
-                <span className="res-val">{result ? fmt(result.withGST) : "—"}</span>
+                <span className="res-lbl">
+                  {isReverseMode ? "GST के साथ Amount" : "Base Price"}
+                </span>
+                <span className="res-val">
+                  {result ? fmt(isReverseMode ? result.withGST : result.withoutGST) : "—"}
+                </span>
               </div>
               <div className="res-row">
                 <span className="res-lbl">GST Amount ({result ? result.rate : 0}%)</span>
@@ -476,18 +508,23 @@ export default function GSTCalculator() {
               </div>
               <div className="divider" />
               <div className="res-row">
-                <span className="res-lbl">✅ Without GST Amount</span>
-                <span className="res-val val-green">{result ? fmt(result.withoutGST) : "—"}</span>
+                <span className="res-lbl">
+                  {isReverseMode ? "✅ Without GST Amount" : "✅ Total Amount with GST"}
+                </span>
+                <span className="res-val val-green">
+                  {result ? fmt(isReverseMode ? result.withoutGST : result.withGST) : "—"}
+                </span>
               </div>
             </div>
 
             {/* Formula */}
             {result && (
               <div className="formula-box">
-                Formula:{" "}
-                <code>
-                  {fmt(result.withGST)} ÷ (1 + {result.rate}/100) = {fmt(result.withoutGST)}
-                </code>
+                {isReverseMode ? (
+                  <>Formula: <code>{fmt(result.withGST)} ÷ (1 + {result.rate}/100) = {fmt(result.withoutGST)}</code></>
+                ) : (
+                  <>Formula: <code>{fmt(result.withoutGST)} + ({result.rate}% of {fmt(result.withoutGST)}) = {fmt(result.withGST)}</code></>
+                )}
                 <button className="reset-btn" onClick={handleReset}>Reset</button>
               </div>
             )}
