@@ -544,7 +544,7 @@ export default function GSTCalculator() {
 
           <div className="gst-footer">
             <img
-              src="/developer-logo.JPG"
+              src="developer-logo.jpg"
               alt="Developer logo"
               className="developer-logo"
             />
