@@ -306,10 +306,22 @@ const styles = `
 
   /* ── Footer ── */
   .gst-footer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     text-align: center;
     margin-top: 14px;
     font-size: 0.72rem;
     color: #7A5C1E;
+  }
+
+  .developer-logo {
+    width: 26px;
+    height: 26px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 1px solid rgba(125, 98, 32, 0.18);
   }
 
   /* ── Tablet (≥480px) ── */
@@ -531,7 +543,12 @@ export default function GSTCalculator() {
           </div>
 
           <div className="gst-footer">
-            Developed by: Amaan Web Tech
+            <img
+              src="/developer-logo.JPG"
+              alt="Developer logo"
+              className="developer-logo"
+            />
+            <span>Developed by: Amaan Web Tech</span>
           </div>
         </div>
       </div>
