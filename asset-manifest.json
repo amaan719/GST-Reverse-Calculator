@@ -1,15 +1,16 @@
 {
   "files": {
     "main.css": "/GST-Reverse-Calculator/static/css/main.e6c13ad2.css",
-    "main.js": "/GST-Reverse-Calculator/static/js/main.91e5fc62.js",
+    "main.js": "/GST-Reverse-Calculator/static/js/main.dd4a9de8.js",
     "static/js/453.271ffdec.chunk.js": "/GST-Reverse-Calculator/static/js/453.271ffdec.chunk.js",
+    "static/media/developer-logo.jpg": "/GST-Reverse-Calculator/static/media/developer-logo.3803bbd2cd70d0b8b38e.jpg",
     "index.html": "/GST-Reverse-Calculator/index.html",
     "main.e6c13ad2.css.map": "/GST-Reverse-Calculator/static/css/main.e6c13ad2.css.map",
-    "main.91e5fc62.js.map": "/GST-Reverse-Calculator/static/js/main.91e5fc62.js.map",
+    "main.dd4a9de8.js.map": "/GST-Reverse-Calculator/static/js/main.dd4a9de8.js.map",
     "453.271ffdec.chunk.js.map": "/GST-Reverse-Calculator/static/js/453.271ffdec.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.e6c13ad2.css",
-    "static/js/main.91e5fc62.js"
+    "static/js/main.dd4a9de8.js"
   ]
 }
