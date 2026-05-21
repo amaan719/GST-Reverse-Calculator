@@ -287,7 +287,7 @@ const styles = `
   .res-val {
     font-size: 1rem;
     font-weight: 700;
-    color: #1A1200;
+    color: var(--text);
     text-align: right;
   }
 
