@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import developerLogo from "./developer-logo.jpg";
 
 const GST_RATES = [3, 5, 12, 18, 28];
 
@@ -14,11 +15,49 @@ const styles = `
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+  :root {
+    color-scheme: light;
+    --bg: #FFF3DC;
+    --surface: #FFF8ED;
+    --border: #FFD480;
+    --text: #1A1200;
+    --muted: #7A5C1E;
+    --accent: #FF6B00;
+    --accent-soft: rgba(255,107,0,0.12);
+    --shadow: rgba(255,107,0,0.12);
+    --input-bg: white;
+    --input-border: #FFD480;
+    --result-bg: white;
+    --button-bg: white;
+    --button-text: #7A5C1E;
+    --button-active: #FF6B00;
+    --card-shadow: 0 6px 0 #FFCF60, 0 10px 28px rgba(255,107,0,0.12);
+  }
+
+  .gst-root.dark {
+    color-scheme: dark;
+    --bg: #121212;
+    --surface: #1E1E28;
+    --border: #3A3A4A;
+    --text: #F5F5F7;
+    --muted: #C3C3D0;
+    --accent: #FFA64D;
+    --accent-soft: rgba(255,166,77,0.16);
+    --shadow: rgba(0,0,0,0.25);
+    --input-bg: #262635;
+    --input-border: #3A3A4A;
+    --result-bg: #23232F;
+    --button-bg: #262635;
+    --button-text: #F5F5F7;
+    --button-active: #FFA64D;
+    --card-shadow: 0 6px 0 rgba(255,166,77,0.14), 0 10px 28px rgba(0,0,0,0.2);
+  }
+
   /* ── Mobile First Base ── */
   .gst-root {
     min-height: 100vh;
     min-height: 100dvh;
-    background: #FFF3DC;
+    background: var(--bg);
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -56,7 +95,7 @@ const styles = `
 
   .gst-badge {
     display: inline-block;
-    background: #FF6B00;
+    background: var(--button-active);
     color: white;
     font-size: 10px;
     font-weight: 700;
@@ -70,26 +109,26 @@ const styles = `
   .gst-title {
     font-size: 1.75rem;
     font-weight: 800;
-    color: #1A1200;
+    color: var(--text);
     line-height: 1.1;
     margin: 0;
   }
 
-  .gst-title span { color: #FF6B00; }
+  .gst-title span { color: var(--button-active); }
 
   .gst-subtitle {
-    color: #7A5C1E;
+    color: var(--muted);
     font-size: 0.82rem;
     margin-top: 4px;
   }
 
   /* ── Card ── */
   .gst-card {
-    background: #FFF8ED;
-    border: 2px solid #FFD480;
+    background: var(--surface);
+    border: 2px solid var(--border);
     border-radius: 20px;
     padding: 18px 16px;
-    box-shadow: 0 6px 0 #FFCF60, 0 10px 28px rgba(255,107,0,0.12);
+    box-shadow: var(--card-shadow);
     animation: fadeUp 0.55s ease 0.1s both;
   }
 
@@ -124,13 +163,13 @@ const styles = `
   .gst-input {
     width: 100%;
     padding: 12px 12px 12px 34px;
-    border: 2px solid #FFD480;
+    border: 2px solid var(--input-border);
     border-radius: 12px;
     font-family: 'Baloo 2', cursive;
     font-size: 1.25rem;
     font-weight: 700;
-    background: white;
-    color: #1A1200;
+    background: var(--input-bg);
+    color: var(--text);
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
     -moz-appearance: textfield;
@@ -154,13 +193,13 @@ const styles = `
 
   .rate-btn {
     padding: 9px 2px;
-    border: 2px solid #FFD480;
+    border: 2px solid var(--border);
     border-radius: 10px;
-    background: white;
+    background: var(--button-bg);
     font-family: 'Baloo 2', cursive;
     font-size: 0.85rem;
     font-weight: 700;
-    color: #7A5C1E;
+    color: var(--button-text);
     cursor: pointer;
     transition: all 0.18s ease;
     text-align: center;
@@ -175,10 +214,10 @@ const styles = `
   }
 
   .rate-btn.rate-active {
-    background: #FF6B00;
-    border-color: #FF6B00;
+    background: var(--button-active);
+    border-color: var(--button-active);
     color: white;
-    box-shadow: 0 4px 0 #E05500;
+    box-shadow: 0 4px 0 rgba(224,85,0,0.9);
     transform: translateY(-2px);
   }
 
@@ -211,8 +250,8 @@ const styles = `
 
   /* ── Result Box ── */
   .result-box {
-    background: white;
-    border: 2px solid #FFD480;
+    background: var(--result-bg);
+    border: 2px solid var(--border);
     border-radius: 16px;
     padding: 14px 16px;
     opacity: 0;
@@ -236,12 +275,12 @@ const styles = `
     gap: 8px;
   }
 
-  .res-row + .res-row { border-top: 1px dashed #FFD480; }
+  .res-row + .res-row { border-top: 1px dashed var(--border); }
 
   .res-lbl {
     font-size: 0.78rem;
     font-weight: 600;
-    color: #7A5C1E;
+    color: var(--muted);
     flex-shrink: 0;
   }
 
@@ -273,11 +312,11 @@ const styles = `
   /* ── Formula ── */
   .formula-box {
     margin-top: 12px;
-    background: rgba(255,107,0,0.06);
+    background: rgba(255,107,0,0.08);
     border-radius: 10px;
     padding: 8px 12px;
     font-size: 0.74rem;
-    color: #7A5C1E;
+    color: var(--muted);
     text-align: center;
     word-break: break-all;
   }
@@ -286,8 +325,39 @@ const styles = `
     font-family: monospace;
     font-size: 0.78rem;
     font-weight: 700;
-    color: #FF6B00;
+    color: var(--button-active);
     word-break: break-all;
+  }
+
+  .action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+    justify-content: center;
+  }
+
+  .action-btn {
+    border: 2px solid var(--button-active);
+    background: var(--button-active);
+    color: white;
+    border-radius: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: 'Baloo 2', cursive;
+    font-size: 0.9rem;
+    font-weight: 700;
+    transition: transform 0.18s ease, opacity 0.18s ease;
+  }
+
+  .action-btn:hover {
+    transform: translateY(-1px);
+    opacity: 0.95;
+  }
+
+  .action-whatsapp {
+    background: #25D366;
+    border-color: #1DA851;
   }
 
   /* ── Reset ── */
@@ -295,7 +365,7 @@ const styles = `
     background: none;
     border: none;
     cursor: pointer;
-    color: #FF6B00;
+    color: var(--button-active);
     font-family: 'Baloo 2', cursive;
     font-size: 0.78rem;
     font-weight: 600;
@@ -317,11 +387,13 @@ const styles = `
   }
 
   .developer-logo {
-    width: 26px;
-    height: 26px;
-    object-fit: cover;
-    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    border-radius: 6px;
     border: 1px solid rgba(125, 98, 32, 0.18);
+    background: white;
+    padding: 2px;
   }
 
   /* ── Tablet (≥480px) ── */
@@ -378,10 +450,38 @@ export default function GSTCalculator() {
   const [useCustom, setUseCustom] = useState(false);
   const [customRate, setCustomRate] = useState("");
   const [mode, setMode] = useState("reverse");
+  const [supplyType, setSupplyType] = useState("intra");
+  const [theme, setTheme] = useState("light");
   const [result, setResult] = useState(null);
 
   const activeRate = useCustom ? parseFloat(customRate) || 0 : selectedRate;
   const isReverseMode = mode === "reverse";
+  const isDarkMode = theme === "dark";
+  const cgstAmt = result ? result.gstAmt / 2 : 0;
+  const sgstAmt = result ? result.gstAmt / 2 : 0;
+  const igstAmt = result ? (supplyType === "inter" ? result.gstAmt : 0) : 0;
+
+  const handleCopy = () => {
+    if (!result) return;
+
+    const shareText = `GST Calculator Result:\nMode: ${isReverseMode ? "Reverse" : "Forward"}\nSupply: ${supplyType === "intra" ? "Intra-state (CGST+SGST)" : "Inter-state (IGST)"}\nRate: ${result.rate}%\n${isReverseMode ? `Total Price with GST: ${fmt(result.withGST)}` : `Base Price: ${fmt(result.withoutGST)}`}\nGST Amount: ${fmt(result.gstAmt)}\n${supplyType === "intra" ? `CGST: ${fmt(cgstAmt)}\nSGST: ${fmt(sgstAmt)}` : `IGST: ${fmt(igstAmt)}`}\nNet ${isReverseMode ? `Price without GST: ${fmt(result.withoutGST)}` : `Price with GST: ${fmt(result.withGST)}`}`;
+
+    navigator.clipboard?.writeText(shareText).catch(() => {
+      const textarea = document.createElement("textarea");
+      textarea.value = shareText;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    });
+  };
+
+  const handleWhatsApp = () => {
+    if (!result) return;
+    const whatsappText = `GST Calculator Result:\nMode: ${isReverseMode ? "Reverse" : "Forward"}\nSupply: ${supplyType === "intra" ? "Intra-state (CGST+SGST)" : "Inter-state (IGST)"}\nRate: ${result.rate}%\n${isReverseMode ? `Total Price with GST: ${fmt(result.withGST)}` : `Base Price: ${fmt(result.withoutGST)}`}\nGST Amount: ${fmt(result.gstAmt)}\n${supplyType === "intra" ? `CGST: ${fmt(cgstAmt)}\nSGST: ${fmt(sgstAmt)}` : `IGST: ${fmt(igstAmt)}`}\n${isReverseMode ? `Price without GST: ${fmt(result.withoutGST)}` : `Price with GST: ${fmt(result.withGST)}`}`;
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappText)}`;
+    window.open(url, "_blank");
+  };
 
   // Live calculation
   useEffect(() => {
@@ -411,7 +511,7 @@ export default function GSTCalculator() {
   return (
     <>
       <style>{styles}</style>
-      <div className="gst-root">
+      <div className={`gst-root ${isDarkMode ? "dark" : "light"}`}>
         <div className="gst-wrapper">
 
           {/* Header */}
@@ -426,6 +526,32 @@ export default function GSTCalculator() {
 
           {/* Card */}
           <div className="gst-card">
+
+            {/* Theme and Supply Type */}
+            <label className="custom-toggle">
+              <input
+                type="checkbox"
+                checked={isDarkMode}
+                onChange={() => setTheme(isDarkMode ? "light" : "dark")}
+              />
+              {isDarkMode ? "Dark Mode" : "Light Mode"}
+            </label>
+
+            <label className="gst-label">Supply Type चुनें</label>
+            <div className="gst-rates-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+              <button
+                className={`rate-btn${supplyType === "intra" ? " rate-active" : ""}`}
+                onClick={() => setSupplyType("intra")}
+              >
+                Intra-state
+              </button>
+              <button
+                className={`rate-btn${supplyType === "inter" ? " rate-active" : ""}`}
+                onClick={() => setSupplyType("inter")}
+              >
+                Inter-state
+              </button>
+            </div>
 
             {/* Mode Selector */}
             <label className="gst-label">Mode चुनें</label>
@@ -518,6 +644,23 @@ export default function GSTCalculator() {
                 <span className="res-lbl">GST Amount ({result ? result.rate : 0}%)</span>
                 <span className="res-val val-orange">{result ? fmt(result.gstAmt) : "—"}</span>
               </div>
+              {supplyType === "intra" ? (
+                <>
+                  <div className="res-row">
+                    <span className="res-lbl">CGST</span>
+                    <span className="res-val">{result ? fmt(cgstAmt) : "—"}</span>
+                  </div>
+                  <div className="res-row">
+                    <span className="res-lbl">SGST</span>
+                    <span className="res-val">{result ? fmt(sgstAmt) : "—"}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="res-row">
+                  <span className="res-lbl">IGST</span>
+                  <span className="res-val">{result ? fmt(igstAmt) : "—"}</span>
+                </div>
+              )}
               <div className="divider" />
               <div className="res-row">
                 <span className="res-lbl">
@@ -526,6 +669,10 @@ export default function GSTCalculator() {
                 <span className="res-val val-green">
                   {result ? fmt(isReverseMode ? result.withoutGST : result.withGST) : "—"}
                 </span>
+              </div>
+              <div className="action-row">
+                <button className="action-btn" onClick={handleCopy}>Copy Result</button>
+                <button className="action-btn action-whatsapp" onClick={handleWhatsApp}>Send to WhatsApp</button>
               </div>
             </div>
 
@@ -544,7 +691,7 @@ export default function GSTCalculator() {
 
           <div className="gst-footer">
             <img
-              src="developer-logo.jpg"
+              src={developerLogo}
               alt="Developer logo"
               className="developer-logo"
             />
