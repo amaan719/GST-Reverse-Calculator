@@ -450,7 +450,6 @@ export default function GSTCalculator() {
   const [useCustom, setUseCustom] = useState(false);
   const [customRate, setCustomRate] = useState("");
   const [mode, setMode] = useState("reverse");
-  const [supplyType, setSupplyType] = useState("intra");
   const [theme, setTheme] = useState("light");
   const [result, setResult] = useState(null);
 
@@ -459,12 +458,11 @@ export default function GSTCalculator() {
   const isDarkMode = theme === "dark";
   const cgstAmt = result ? result.gstAmt / 2 : 0;
   const sgstAmt = result ? result.gstAmt / 2 : 0;
-  const igstAmt = result ? (supplyType === "inter" ? result.gstAmt : 0) : 0;
 
   const handleCopy = () => {
     if (!result) return;
 
-    const shareText = `GST Calculator Result:\nMode: ${isReverseMode ? "Reverse" : "Forward"}\nSupply: ${supplyType === "intra" ? "Intra-state (CGST+SGST)" : "Inter-state (IGST)"}\nRate: ${result.rate}%\n${isReverseMode ? `Total Price with GST: ${fmt(result.withGST)}` : `Base Price: ${fmt(result.withoutGST)}`}\nGST Amount: ${fmt(result.gstAmt)}\n${supplyType === "intra" ? `CGST: ${fmt(cgstAmt)}\nSGST: ${fmt(sgstAmt)}` : `IGST: ${fmt(igstAmt)}`}\nNet ${isReverseMode ? `Price without GST: ${fmt(result.withoutGST)}` : `Price with GST: ${fmt(result.withGST)}`}`;
+    const shareText = `GST Calculator Result:\nMode: ${isReverseMode ? "Reverse" : "Forward"}\nRate: ${result.rate}%\n${isReverseMode ? `Total Price with GST: ${fmt(result.withGST)}` : `Base Price: ${fmt(result.withoutGST)}`}\nGST Amount: ${fmt(result.gstAmt)}\nCGST: ${fmt(cgstAmt)}\nSGST: ${fmt(sgstAmt)}\nNet ${isReverseMode ? `Price without GST: ${fmt(result.withoutGST)}` : `Price with GST: ${fmt(result.withGST)}`}`;
 
     navigator.clipboard?.writeText(shareText).catch(() => {
       const textarea = document.createElement("textarea");
@@ -478,7 +476,7 @@ export default function GSTCalculator() {
 
   const handleWhatsApp = () => {
     if (!result) return;
-    const whatsappText = `GST Calculator Result:\nMode: ${isReverseMode ? "Reverse" : "Forward"}\nSupply: ${supplyType === "intra" ? "Intra-state (CGST+SGST)" : "Inter-state (IGST)"}\nRate: ${result.rate}%\n${isReverseMode ? `Total Price with GST: ${fmt(result.withGST)}` : `Base Price: ${fmt(result.withoutGST)}`}\nGST Amount: ${fmt(result.gstAmt)}\n${supplyType === "intra" ? `CGST: ${fmt(cgstAmt)}\nSGST: ${fmt(sgstAmt)}` : `IGST: ${fmt(igstAmt)}`}\n${isReverseMode ? `Price without GST: ${fmt(result.withoutGST)}` : `Price with GST: ${fmt(result.withGST)}`}`;
+    const whatsappText = `GST Calculator Result:\nMode: ${isReverseMode ? "Reverse" : "Forward"}\nRate: ${result.rate}%\n${isReverseMode ? `Total Price with GST: ${fmt(result.withGST)}` : `Base Price: ${fmt(result.withoutGST)}`}\nGST Amount: ${fmt(result.gstAmt)}\nCGST: ${fmt(cgstAmt)}\nSGST: ${fmt(sgstAmt)}\n${isReverseMode ? `Price without GST: ${fmt(result.withoutGST)}` : `Price with GST: ${fmt(result.withGST)}`}`;
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappText)}`;
     window.open(url, "_blank");
   };
@@ -527,7 +525,7 @@ export default function GSTCalculator() {
           {/* Card */}
           <div className="gst-card">
 
-            {/* Theme and Supply Type */}
+            {/* Theme Selector */}
             <label className="custom-toggle">
               <input
                 type="checkbox"
@@ -536,22 +534,6 @@ export default function GSTCalculator() {
               />
               {isDarkMode ? "Dark Mode" : "Light Mode"}
             </label>
-
-            <label className="gst-label">Supply Type चुनें</label>
-            <div className="gst-rates-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
-              <button
-                className={`rate-btn${supplyType === "intra" ? " rate-active" : ""}`}
-                onClick={() => setSupplyType("intra")}
-              >
-                Intra-state
-              </button>
-              <button
-                className={`rate-btn${supplyType === "inter" ? " rate-active" : ""}`}
-                onClick={() => setSupplyType("inter")}
-              >
-                Inter-state
-              </button>
-            </div>
 
             {/* Mode Selector */}
             <label className="gst-label">Mode चुनें</label>
@@ -644,23 +626,14 @@ export default function GSTCalculator() {
                 <span className="res-lbl">GST Amount ({result ? result.rate : 0}%)</span>
                 <span className="res-val val-orange">{result ? fmt(result.gstAmt) : "—"}</span>
               </div>
-              {supplyType === "intra" ? (
-                <>
-                  <div className="res-row">
-                    <span className="res-lbl">CGST</span>
-                    <span className="res-val">{result ? fmt(cgstAmt) : "—"}</span>
-                  </div>
-                  <div className="res-row">
-                    <span className="res-lbl">SGST</span>
-                    <span className="res-val">{result ? fmt(sgstAmt) : "—"}</span>
-                  </div>
-                </>
-              ) : (
-                <div className="res-row">
-                  <span className="res-lbl">IGST</span>
-                  <span className="res-val">{result ? fmt(igstAmt) : "—"}</span>
-                </div>
-              )}
+              <div className="res-row">
+                <span className="res-lbl">CGST</span>
+                <span className="res-val">{result ? fmt(cgstAmt) : "—"}</span>
+              </div>
+              <div className="res-row">
+                <span className="res-lbl">SGST</span>
+                <span className="res-val">{result ? fmt(sgstAmt) : "—"}</span>
+              </div>
               <div className="divider" />
               <div className="res-row">
                 <span className="res-lbl">
