@@ -453,16 +453,44 @@ export default function GSTCalculator() {
   const [theme, setTheme] = useState("light");
   const [result, setResult] = useState(null);
 
+  const [useIGST, setUseIGST] = useState(false);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [items, setItems] = useState([]);
+  const [newItemAmount, setNewItemAmount] = useState("");
+  const [newItemRate, setNewItemRate] = useState(selectedRate);
+
   const activeRate = useCustom ? parseFloat(customRate) || 0 : selectedRate;
   const isReverseMode = mode === "reverse";
   const isDarkMode = theme === "dark";
-  const cgstAmt = result ? result.gstAmt / 2 : 0;
-  const sgstAmt = result ? result.gstAmt / 2 : 0;
+  const cgstAmt = result && !bulkMode ? (useIGST ? 0 : result.gstAmt / 2) : 0;
+  const sgstAmt = result && !bulkMode ? (useIGST ? 0 : result.gstAmt / 2) : 0;
+  const igstAmt = result && !bulkMode ? (useIGST ? result.gstAmt : 0) : 0;
 
   const handleCopy = () => {
     if (!result) return;
+    const modeLabel = isReverseMode ? "Reverse" : "Forward";
 
-    const shareText = `GST Calculator Result:\nMode: ${isReverseMode ? "Reverse" : "Forward"}\nRate: ${result.rate}%\n${isReverseMode ? `Total Price with GST: ${fmt(result.withGST)}` : `Base Price: ${fmt(result.withoutGST)}`}\nGST Amount: ${fmt(result.gstAmt)}\nCGST: ${fmt(cgstAmt)}\nSGST: ${fmt(sgstAmt)}\nNet ${isReverseMode ? `Price without GST: ${fmt(result.withoutGST)}` : `Price with GST: ${fmt(result.withGST)}`}`;
+    if (result.items) {
+      let text = `GST Calculator - Bulk Items (Mode: ${modeLabel})\n`;
+      let i = 1;
+      result.items.forEach(it => {
+        text += `Item ${i}: Rate ${it.rate}% - ${isReverseMode ? `Price with GST: ${fmt(it.withGST)}` : `Base Price: ${fmt(it.withoutGST)}`}\n`;
+        text += `GST: ${fmt(it.gstAmt)} ${useIGST ? `(IGST: ${fmt(it.gstAmt)})` : `(CGST: ${fmt(it.gstAmt/2)}, SGST: ${fmt(it.gstAmt/2)})`}\n`;
+        i++;
+      });
+      text += `---\nTotals: GST ${fmt(result.totals.totalGST)}, Without GST ${fmt(result.totals.totalWithout)}, With GST ${fmt(result.totals.totalWith)}\n`;
+      navigator.clipboard?.writeText(text).catch(() => {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      });
+      return;
+    }
+
+    const shareText = `GST Calculator Result:\nMode: ${modeLabel}\nRate: ${result.rate}%\n${isReverseMode ? `Total Price with GST: ${fmt(result.withGST)}` : `Base Price: ${fmt(result.withoutGST)}`}\nGST Amount: ${fmt(result.gstAmt)}\n${useIGST ? `IGST: ${fmt(igstAmt)}` : `CGST: ${fmt(cgstAmt)}\nSGST: ${fmt(sgstAmt)}`}\nNet ${isReverseMode ? `Price without GST: ${fmt(result.withoutGST)}` : `Price with GST: ${fmt(result.withGST)}`}`;
 
     navigator.clipboard?.writeText(shareText).catch(() => {
       const textarea = document.createElement("textarea");
@@ -476,29 +504,47 @@ export default function GSTCalculator() {
 
   const handleWhatsApp = () => {
     if (!result) return;
-    const whatsappText = `GST Calculator Result:\nMode: ${isReverseMode ? "Reverse" : "Forward"}\nRate: ${result.rate}%\n${isReverseMode ? `Total Price with GST: ${fmt(result.withGST)}` : `Base Price: ${fmt(result.withoutGST)}`}\nGST Amount: ${fmt(result.gstAmt)}\nCGST: ${fmt(cgstAmt)}\nSGST: ${fmt(sgstAmt)}\n${isReverseMode ? `Price without GST: ${fmt(result.withoutGST)}` : `Price with GST: ${fmt(result.withGST)}`}`;
+    const modeLabel2 = isReverseMode ? "Reverse" : "Forward";
+
+    if (result.items) {
+      let text = `GST Calculator - Bulk Items (Mode: ${modeLabel2})\n`;
+      let i = 1;
+      result.items.forEach(it => {
+        text += `Item ${i}: Rate ${it.rate}% - ${isReverseMode ? `Price with GST: ${fmt(it.withGST)}` : `Base Price: ${fmt(it.withoutGST)}`}\n`;
+        text += `GST: ${fmt(it.gstAmt)} ${useIGST ? `(IGST: ${fmt(it.gstAmt)})` : `(CGST: ${fmt(it.gstAmt/2)}, SGST: ${fmt(it.gstAmt/2)})`}\n`;
+        i++;
+      });
+      text += `---\nTotals: GST ${fmt(result.totals.totalGST)}, Without GST ${fmt(result.totals.totalWithout)}, With GST ${fmt(result.totals.totalWith)}\n`;
+      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      window.open(url, "_blank");
+      return;
+    }
+
+    const whatsappText = `GST Calculator Result:\nMode: ${modeLabel2}\nRate: ${result.rate}%\n${isReverseMode ? `Total Price with GST: ${fmt(result.withGST)}` : `Base Price: ${fmt(result.withoutGST)}`}\nGST Amount: ${fmt(result.gstAmt)}\n${useIGST ? `IGST: ${fmt(igstAmt)}` : `CGST: ${fmt(cgstAmt)}\nSGST: ${fmt(sgstAmt)}`}\n${isReverseMode ? `Price without GST: ${fmt(result.withoutGST)}` : `Price with GST: ${fmt(result.withGST)}`}`;
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappText)}`;
     window.open(url, "_blank");
   };
 
-  // Live calculation
+  // Live calculation for single-item mode only
   useEffect(() => {
     const a = parseFloat(amount);
-    if (!isNaN(a) && a > 0 && activeRate > 0) {
-      if (isReverseMode) {
-        const withoutGST = a / (1 + activeRate / 100);
-        const gstAmt = a - withoutGST;
-        setResult({ withGST: a, gstAmt, withoutGST, rate: activeRate });
+    if (!bulkMode) {
+      if (!isNaN(a) && a > 0 && activeRate > 0) {
+        if (isReverseMode) {
+          const withoutGST = a / (1 + activeRate / 100);
+          const gstAmt = a - withoutGST;
+          setResult({ withGST: a, gstAmt, withoutGST, rate: activeRate });
+        } else {
+          const withoutGST = a;
+          const gstAmt = a * (activeRate / 100);
+          const withGST = a + gstAmt;
+          setResult({ withGST, gstAmt, withoutGST, rate: activeRate });
+        }
       } else {
-        const withoutGST = a;
-        const gstAmt = a * (activeRate / 100);
-        const withGST = a + gstAmt;
-        setResult({ withGST, gstAmt, withoutGST, rate: activeRate });
+        setResult(null);
       }
-    } else {
-      setResult(null);
     }
-  }, [amount, activeRate, isReverseMode]);
+  }, [amount, activeRate, isReverseMode, bulkMode]);
 
   const handleReset = () => {
     setAmount("");
@@ -539,13 +585,13 @@ export default function GSTCalculator() {
             <label className="gst-label">Mode चुनें</label>
             <div className="gst-rates-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
               <button
-                className={`rate-btn${isReverseMode ? " rate-active" : ""}`}
+                className={`rate-btn${mode === "reverse" ? " rate-active" : ""}`}
                 onClick={() => setMode("reverse")}
               >
                 Reverse
               </button>
               <button
-                className={`rate-btn${!isReverseMode ? " rate-active" : ""}`}
+                className={`rate-btn${mode === "forward" ? " rate-active" : ""}`}
                 onClick={() => setMode("forward")}
               >
                 Forward
@@ -553,21 +599,127 @@ export default function GSTCalculator() {
             </div>
 
             {/* Amount Input */}
-            <label className="gst-label">
-              {isReverseMode ? "GST के साथ Amount (₹)" : "Base Price बिना GST (₹)"}
-            </label>
-            <div className="gst-input-wrap">
-              <span className="gst-prefix">₹</span>
-              <input
-                className="gst-input"
-                type="number"
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-            </div>
+            {!bulkMode && (
+              <>
+                <label className="gst-label">
+                  {isReverseMode ? "GST के साथ Amount (₹)" : "Base Price बिना GST (₹)"}
+                </label>
+                <div className="gst-input-wrap">
+                  <span className="gst-prefix">₹</span>
+                  <input
+                    className="gst-input"
+                    type="number"
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
+
+            {bulkMode && (
+              <div className="custom-input-wrap">
+                <label className="gst-label">Bulk Items</label>
+
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <div className="gst-input-wrap">
+                      <span className="gst-prefix">₹</span>
+                      <input
+                        className="gst-input"
+                        type="number"
+                        placeholder="Amount"
+                        min="0"
+                        step="0.01"
+                        value={newItemAmount}
+                        onChange={(e) => setNewItemAmount(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <input
+                    className="gst-input"
+                    style={{ width: 110 }}
+                    type="number"
+                    placeholder="Rate (%)"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value={newItemRate}
+                    onChange={(e) => setNewItemRate(e.target.value)}
+                  />
+                  <button
+                    className="action-btn"
+                    onClick={() => {
+                      const a = newItemAmount;
+                      const r = newItemRate || selectedRate;
+                      if (!a) return;
+                      setItems(prev => [...prev, { id: Date.now(), amount: a, rate: r }]);
+                      setNewItemAmount("");
+                      setNewItemRate(selectedRate);
+                    }}
+                  >
+                    Add to List
+                  </button>
+                </div>
+
+                {items.length > 0 && (
+                  <div style={{ marginBottom: 8 }}>
+                    {items.map((it, idx) => (
+                      <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '6px 0' }}>
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                          <div style={{ minWidth: 80 }}>#{idx + 1}</div>
+                          <div>{fmt(parseFloat(it.amount) || 0)}</div>
+                          <div>{it.rate}%</div>
+                        </div>
+                        <div>
+                          <button className="rate-btn" onClick={() => setItems(prev => prev.filter(p => p.id !== it.id))}>Remove</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <button className="action-btn" onClick={() => {
+                    // calculate bulk
+                    const parsed = items.map(it => {
+                      const a = parseFloat(it.amount);
+                      const r = parseFloat(it.rate) || activeRate;
+                      if (!isNaN(a) && a > 0 && r > 0) {
+                        if (isReverseMode) {
+                          const withoutGST = a / (1 + r / 100);
+                          const gstAmt = a - withoutGST;
+                          return { id: it.id, withGST: a, gstAmt, withoutGST, rate: r };
+                        } else {
+                          const withoutGST = a;
+                          const gstAmt = a * (r / 100);
+                          const withGST = a + gstAmt;
+                          return { id: it.id, withGST, gstAmt, withoutGST, rate: r };
+                        }
+                      }
+                      return null;
+                    }).filter(Boolean);
+
+                    if (parsed.length === 0) {
+                      setResult(null);
+                      return;
+                    }
+
+                    const totals = parsed.reduce((acc, it) => {
+                      acc.totalGST += it.gstAmt;
+                      acc.totalWithout += it.withoutGST;
+                      acc.totalWith += it.withGST;
+                      return acc;
+                    }, { totalGST: 0, totalWithout: 0, totalWith: 0 });
+
+                    setResult({ items: parsed, totals });
+                  }}>Calculate All</button>
+                  <button className="rate-btn" onClick={() => { setItems([]); setResult(null); }}>Clear List</button>
+                </div>
+              </div>
+            )}
 
             {/* Rate Selector */}
             <label className="gst-label">GST Rate चुनें</label>
@@ -593,6 +745,24 @@ export default function GSTCalculator() {
               Custom Rate use करें
             </label>
 
+            <label className="custom-toggle">
+              <input
+                type="checkbox"
+                checked={useIGST}
+                onChange={(e) => setUseIGST(e.target.checked)}
+              />
+              Use IGST (Inter-state)
+            </label>
+
+            <label className="custom-toggle">
+              <input
+                type="checkbox"
+                checked={bulkMode}
+                onChange={(e) => setBulkMode(e.target.checked)}
+              />
+              Bulk Items Mode
+            </label>
+
             {useCustom && (
               <div className="custom-input-wrap">
                 <label className="gst-label">Custom GST Rate (%)</label>
@@ -614,39 +784,102 @@ export default function GSTCalculator() {
 
             {/* Result */}
             <div className={`result-box${result ? " result-visible" : ""}`}>
-              <div className="res-row">
-                <span className="res-lbl">
-                  {isReverseMode ? "GST के साथ Amount" : "Base Price"}
-                </span>
-                <span className="res-val">
-                  {result ? fmt(isReverseMode ? result.withGST : result.withoutGST) : "—"}
-                </span>
-              </div>
-              <div className="res-row">
-                <span className="res-lbl">GST Amount ({result ? result.rate : 0}%)</span>
-                <span className="res-val val-orange">{result ? fmt(result.gstAmt) : "—"}</span>
-              </div>
-              <div className="res-row">
-                <span className="res-lbl">CGST</span>
-                <span className="res-val">{result ? fmt(cgstAmt) : "—"}</span>
-              </div>
-              <div className="res-row">
-                <span className="res-lbl">SGST</span>
-                <span className="res-val">{result ? fmt(sgstAmt) : "—"}</span>
-              </div>
-              <div className="divider" />
-              <div className="res-row">
-                <span className="res-lbl">
-                  {isReverseMode ? "✅ Without GST Amount" : "✅ Total Amount with GST"}
-                </span>
-                <span className="res-val val-green">
-                  {result ? fmt(isReverseMode ? result.withoutGST : result.withGST) : "—"}
-                </span>
-              </div>
-              <div className="action-row">
-                <button className="action-btn" onClick={handleCopy}>Copy Result</button>
-                <button className="action-btn action-whatsapp" onClick={handleWhatsApp}>Send to WhatsApp</button>
-              </div>
+              {!bulkMode ? (
+                <>
+                  <div className="res-row">
+                    <span className="res-lbl">
+                      {isReverseMode ? "GST के साथ Amount" : "Base Price"}
+                    </span>
+                    <span className="res-val">
+                      {result ? fmt(isReverseMode ? result.withGST : result.withoutGST) : "—"}
+                    </span>
+                  </div>
+                  <div className="res-row">
+                    <span className="res-lbl">GST Amount ({result ? result.rate : 0}%)</span>
+                    <span className="res-val val-orange">{result ? fmt(result.gstAmt) : "—"}</span>
+                  </div>
+                  {useIGST ? (
+                    <div className="res-row">
+                      <span className="res-lbl">IGST</span>
+                      <span className="res-val">{result ? fmt(igstAmt) : "—"}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="res-row">
+                        <span className="res-lbl">CGST</span>
+                        <span className="res-val">{result ? fmt(cgstAmt) : "—"}</span>
+                      </div>
+                      <div className="res-row">
+                        <span className="res-lbl">SGST</span>
+                        <span className="res-val">{result ? fmt(sgstAmt) : "—"}</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="divider" />
+                  <div className="res-row">
+                    <span className="res-lbl">
+                      {isReverseMode ? "✅ Without GST Amount" : "✅ Total Amount with GST"}
+                    </span>
+                    <span className="res-val val-green">
+                      {result ? fmt(isReverseMode ? result.withoutGST : result.withGST) : "—"}
+                    </span>
+                  </div>
+                  <div className="action-row">
+                    <button className="action-btn" onClick={handleCopy}>Copy Result</button>
+                    <button className="action-btn action-whatsapp" onClick={handleWhatsApp}>Send to WhatsApp</button>
+                  </div>
+                </>
+              ) : (
+                result ? (
+                  <>
+                    {result.items.map((it, idx) => (
+                      <div className="res-row" key={it.id}>
+                        <span className="res-lbl">Item {idx + 1} ({it.rate}%)</span>
+                        <span className="res-val">{isReverseMode ? fmt(it.withGST) : fmt(it.withoutGST)}</span>
+                      </div>
+                    ))}
+                    <div className="res-row">
+                      <span className="res-lbl">Total GST</span>
+                      <span className="res-val val-orange">{fmt(result.totals.totalGST)}</span>
+                    </div>
+                    {useIGST ? (
+                      <div className="res-row">
+                        <span className="res-lbl">IGST Total</span>
+                        <span className="res-val">{fmt(result.totals.totalGST)}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="res-row">
+                          <span className="res-lbl">CGST Total</span>
+                          <span className="res-val">{fmt(result.totals.totalGST / 2)}</span>
+                        </div>
+                        <div className="res-row">
+                          <span className="res-lbl">SGST Total</span>
+                          <span className="res-val">{fmt(result.totals.totalGST / 2)}</span>
+                        </div>
+                      </>
+                    )}
+                    <div className="divider" />
+                    <div className="res-row">
+                      <span className="res-lbl">Totals (Without GST)</span>
+                      <span className="res-val val-green">{fmt(result.totals.totalWithout)}</span>
+                    </div>
+                    <div className="res-row">
+                      <span className="res-lbl">Totals (With GST)</span>
+                      <span className="res-val val-green">{fmt(result.totals.totalWith)}</span>
+                    </div>
+                    <div className="action-row">
+                      <button className="action-btn" onClick={handleCopy}>Copy Result</button>
+                      <button className="action-btn action-whatsapp" onClick={handleWhatsApp}>Send to WhatsApp</button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="res-row">
+                    <span className="res-lbl">No valid items</span>
+                    <span className="res-val">—</span>
+                  </div>
+                )
+              )}
             </div>
 
             {/* Formula */}
