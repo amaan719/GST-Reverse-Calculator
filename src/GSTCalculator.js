@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import { jsPDF } from "jspdf";
 import developerLogo from "./developer-logo.jpg";
+import signatureImage from "./amaan-sign.jpeg";
 
 const GST_RATES = [3, 5, 12, 18, 28];
 
@@ -525,6 +527,135 @@ export default function GSTCalculator() {
     window.open(url, "_blank");
   };
 
+  const handleGeneratePdf = () => {
+    if (!result) return;
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const left = 40;
+    let y = 40;
+
+    const headerWidth = 520;
+    const itemColumns = {
+      index: left,
+      rate: left + 70,
+      amountHeader: left + 205,
+      gstHeader: left + 350,
+      totalHeader: left + 455,
+      amountRight: left + 250,
+      gstRight: left + 385,
+      totalRight: left + 520,
+    };
+    const amountLabel = isReverseMode ? "With GST" : "Base Price";
+    const totalLabel = isReverseMode ? "Without GST" : "With GST";
+    const taxRateLabel = bulkMode ? "Multiple" : `${result.rate ?? ""}%`;
+
+    const pdfFmt = (value) => `Rs ${Number(value).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(18);
+    doc.text("Invoice", left, y);
+    y += 24;
+    doc.setLineWidth(0.8);
+    doc.line(left, y - 10, left + headerWidth, y - 10);
+
+    doc.setFontSize(11);
+    doc.text(`Mode: ${isReverseMode ? "Reverse" : "Forward"}`, left, y);
+    doc.text(`Tax Type: ${useIGST ? "IGST" : "CGST + SGST"}`, left + 260, y);
+    y += 18;
+    doc.text(`Rate: ${taxRateLabel}`, left, y);
+    doc.text(`Items: ${bulkMode ? result.items.length : 1}`, left + 260, y);
+    y += 22;
+
+    if (!bulkMode) {
+      doc.text(`${amountLabel}: ${pdfFmt(isReverseMode ? result.withGST : result.withoutGST)}`, left, y);
+      y += 16;
+      doc.text(`GST Amount: ${pdfFmt(result.gstAmt)}`, left, y);
+      y += 16;
+      if (useIGST) {
+        doc.text(`IGST: ${pdfFmt(igstAmt)}`, left, y);
+      } else {
+        doc.text(`CGST: ${pdfFmt(cgstAmt)}`, left, y);
+        y += 16;
+        doc.text(`SGST: ${pdfFmt(sgstAmt)}`, left, y);
+      }
+      y += 22;
+      doc.setFontSize(12);
+      doc.text(`Net ${totalLabel}: ${pdfFmt(isReverseMode ? result.withoutGST : result.withGST)}`, left, y);
+    } else {
+      doc.setFontSize(12);
+      doc.text("Item details", left, y);
+      y += 18;
+      doc.setFontSize(11);
+      doc.setDrawColor(170);
+      doc.text("#", itemColumns.index, y);
+      doc.text("Rate", itemColumns.rate, y);
+      doc.text(amountLabel, itemColumns.amountHeader, y);
+      doc.text("GST", itemColumns.gstHeader, y);
+      doc.text(totalLabel, itemColumns.totalHeader, y);
+      y += 18;
+      doc.line(left, y - 10, left + headerWidth, y - 10);
+      y += 10;
+
+      result.items.forEach((item, index) => {
+        if (y > 740) {
+          doc.addPage();
+          y = 40;
+          doc.setFontSize(11);
+          doc.text("#", itemColumns.index, y);
+          doc.text("Rate", itemColumns.rate, y);
+          doc.text(amountLabel, itemColumns.amountHeader, y);
+          doc.text("GST", itemColumns.gstHeader, y);
+          doc.text(totalLabel, itemColumns.totalHeader, y);
+          y += 18;
+          doc.line(left, y - 10, left + headerWidth, y - 10);
+          y += 10;
+        }
+
+        doc.text(`${index + 1}`, itemColumns.index, y);
+        doc.text(`${Number(item.rate).toFixed(2)}%`, itemColumns.rate, y);
+        doc.text(pdfFmt(isReverseMode ? item.withGST : item.withoutGST), itemColumns.amountRight, y, { align: "right" });
+        doc.text(pdfFmt(item.gstAmt), itemColumns.gstRight, y, { align: "right" });
+        doc.text(pdfFmt(isReverseMode ? item.withoutGST : item.withGST), itemColumns.totalRight, y, { align: "right" });
+        y += 18;
+      });
+
+      y += 10;
+      if (y > 720) {
+        doc.addPage();
+        y = 40;
+      }
+      doc.setFontSize(12);
+      doc.text("Totals", left, y);
+      y += 18;
+      doc.setFontSize(11);
+      doc.text(`Total GST: ${pdfFmt(result.totals.totalGST)}`, left, y);
+      y += 16;
+      doc.text(`Total Without GST: ${pdfFmt(result.totals.totalWithout)}`, left, y);
+      y += 16;
+      doc.text(`Total With GST: ${pdfFmt(result.totals.totalWith)}`, left, y);
+    }
+
+    const savePdf = () => {
+      doc.save(`GST-invoice-${Date.now()}.pdf`);
+    };
+
+    const signatureY = y + 30;
+    if (signatureY > 760) {
+      doc.addPage();
+      y = 40;
+    }
+    const signX = left + headerWidth - 130;
+    const signY = signatureY > 760 ? 40 : signatureY;
+    const img = new Image();
+    img.src = signatureImage;
+    img.onload = () => {
+      doc.addImage(img, "JPEG", signX, signY, 110, 40);
+      doc.setFontSize(10);
+      doc.text("Authorized signature", signX, signY + 54);
+      savePdf();
+    };
+    img.onerror = savePdf;
+  };
+
   // Live calculation for single-item mode only
   useEffect(() => {
     const a = parseFloat(amount);
@@ -826,6 +957,7 @@ export default function GSTCalculator() {
                   </div>
                   <div className="action-row">
                     <button className="action-btn" onClick={handleCopy}>Copy Result</button>
+                    <button className="action-btn" onClick={handleGeneratePdf}>Download Invoice PDF</button>
                     <button className="action-btn action-whatsapp" onClick={handleWhatsApp}>Send to WhatsApp</button>
                   </div>
                 </>
@@ -870,6 +1002,7 @@ export default function GSTCalculator() {
                     </div>
                     <div className="action-row">
                       <button className="action-btn" onClick={handleCopy}>Copy Result</button>
+                      <button className="action-btn" onClick={handleGeneratePdf}>Download Invoice PDF</button>
                       <button className="action-btn action-whatsapp" onClick={handleWhatsApp}>Send to WhatsApp</button>
                     </div>
                   </>
