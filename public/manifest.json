@@ -5,11 +5,11 @@
     {
       "src": "favicone-logo.jpg",
       "sizes": "192x192",
-      "type": "image/jpg"
+      "type": "image/png"
     },
     {
       "src": "favicone-logo.jpg",
-      "type": "image/jpg",
+      "type": "image/png",
       "sizes": "512x512"
     }
   ],
