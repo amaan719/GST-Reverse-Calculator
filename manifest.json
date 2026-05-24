@@ -3,13 +3,13 @@
   "name": "GST Calculator",
   "icons": [
     {
-      "src": "favicone-logo.jpg",
+      "src": "favicone-logo.png",
       "sizes": "192x192",
-      "type": "image/jpg"
+      "type": "image/png"
     },
     {
-      "src": "favicone-logo.jpg",
-      "type": "image/jpg",
+      "src": "favicone-logo.png",
+      "type": "image/png",
       "sizes": "512x512"
     }
   ],
