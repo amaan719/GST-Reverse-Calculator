@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { jsPDF } from "jspdf";
 import developerLogo from "./developer-logo.jpg";
-import signatureImage from "./amaan-sign.jpeg";
 
 const GST_RATES = [3, 5, 12, 18, 28];
 
@@ -378,12 +377,13 @@ const styles = `
 
   /* ── Footer ── */
   .gst-footer {
-    display: inline-flex;
-    align-items: center;
+    display: flex;
+    width: 100%;
     justify-content: center;
+    align-items: center;
     gap: 8px;
     text-align: center;
-    margin-top: 14px;
+    margin: 14px auto 0;
     font-size: 0.72rem;
     color: #7A5C1E;
   }
@@ -451,6 +451,8 @@ export default function GSTCalculator() {
   const [selectedRate, setSelectedRate] = useState(18);
   const [useCustom, setUseCustom] = useState(false);
   const [customRate, setCustomRate] = useState("");
+  const [quotationFor, setQuotationFor] = useState("");
+  const [invoiceDate, setInvoiceDate] = useState("");
   const [mode, setMode] = useState("reverse");
   const [theme, setTheme] = useState("light");
   const [result, setResult] = useState(null);
@@ -554,6 +556,12 @@ export default function GSTCalculator() {
     doc.setFontSize(18);
     doc.text("Invoice", left, y);
     y += 24;
+    doc.setFontSize(12);
+    doc.text(`Quotation for: ${quotationFor.trim() || "Self"}`, left, y);
+    if (invoiceDate) {
+      doc.text(`Date: ${invoiceDate}`, left + 340, y);
+    }
+    y += 18;
     doc.setLineWidth(0.8);
     doc.line(left, y - 10, left + headerWidth, y - 10);
 
@@ -638,22 +646,7 @@ export default function GSTCalculator() {
       doc.save(`GST-invoice-${Date.now()}.pdf`);
     };
 
-    const signatureY = y + 30;
-    if (signatureY > 760) {
-      doc.addPage();
-      y = 40;
-    }
-    const signX = left + headerWidth - 130;
-    const signY = signatureY > 760 ? 40 : signatureY;
-    const img = new Image();
-    img.src = signatureImage;
-    img.onload = () => {
-      doc.addImage(img, "JPEG", signX, signY, 110, 40);
-      doc.setFontSize(10);
-      doc.text("Authorized signature", signX, signY + 54);
-      savePdf();
-    };
-    img.onerror = savePdf;
+    savePdf();
   };
 
   // Live calculation for single-item mode only
@@ -680,6 +673,8 @@ export default function GSTCalculator() {
   const handleReset = () => {
     setAmount("");
     setCustomRate("");
+    setQuotationFor("");
+    setInvoiceDate("");
     setResult(null);
   };
 
@@ -728,6 +723,23 @@ export default function GSTCalculator() {
                 Forward
               </button>
             </div>
+
+            {/* Quotation For Input */}
+            <label className="gst-label">Quotation for</label>
+            <input
+              className="gst-input"
+              type="text"
+              placeholder="Self or client name"
+              value={quotationFor}
+              onChange={(e) => setQuotationFor(e.target.value)}
+            />
+            <label className="gst-label">Date (optional)</label>
+            <input
+              className="gst-input"
+              type="date"
+              value={invoiceDate}
+              onChange={(e) => setInvoiceDate(e.target.value)}
+            />
 
             {/* Amount Input */}
             {!bulkMode && (
